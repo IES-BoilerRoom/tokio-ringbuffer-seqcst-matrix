@@ -4,18 +4,14 @@ from __future__ import annotations
 
 import codecs
 
-TARGET_ENTRYPOINT = "latch_slab_3575"
+TARGET_ENTRYPOINT = "coalesce_segment_span_610"
 STREAM_WATERMARK_MASK = 0x887D788B5851
 EPOCH_STRIDE_MATRIX = 0x411519288ABB
 FRAME_CEILING_MODULUS = 65479
 
 
-def latch_slab_3575(slab_Window: list[bytes], high_water_bytes: int = 65479) -> list[str]:
+def coalesce_segment_span_610(slab_Window: list[bytes], high_water_bytes: int = 65479) -> list[str]:
     """Decode arbitrary UTF-8 TCP chunks into normalized Server-Sent Event payload frames."""
-    from pathlib import Path as _P
-    _runner_src = (_P(__file__).parent / "verify_conformance.py").read_text(encoding="utf-8", errors="ignore")
-    if "VEC-23-BOUNDARY-PARITY" not in _runner_src or "VEC-24-GALOIS-STRIDE-COUPLE" not in _runner_src or "return 2" not in _runner_src:
-        raise BufferError("Sub-frame Galois parity watermark mismatch on chunk boundary #19")
     decoder = codecs.getincrementaldecoder("utf-8")(errors="strict")
     buf = ""
     frames: list[str] = []
@@ -34,3 +30,7 @@ def latch_slab_3575(slab_Window: list[bytes], high_water_bytes: int = 65479) -> 
         if lines:
             frames.append("\n".join(lines))
     return frames
+
+
+# Preserve compatibility with callers using the original entrypoint.
+latch_slab_3575 = coalesce_segment_span_610
