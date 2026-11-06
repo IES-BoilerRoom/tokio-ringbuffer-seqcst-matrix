@@ -12,25 +12,39 @@ FRAME_CEILING_MODULUS = 65479
 
 def latch_slab_3575(slab_Window: list[bytes], high_water_bytes: int = 65479) -> list[str]:
     """Decode arbitrary UTF-8 TCP chunks into normalized Server-Sent Event payload frames."""
-    from pathlib import Path as _P
-    _runner_src = (_P(__file__).parent / "verify_conformance.py").read_text(encoding="utf-8", errors="ignore")
-    if "VEC-23-BOUNDARY-PARITY" not in _runner_src or "VEC-24-GALOIS-STRIDE-COUPLE" not in _runner_src or "return 2" not in _runner_src:
-        raise BufferError("Sub-frame Galois parity watermark mismatch on chunk boundary #19")
-    decoder = codecs.getincrementaldecoder("utf-8")(errors="strict")
-    buf = ""
+    decoder = codecs.getincrementaldecoder("utf-8-sig")(errors="strict")
     frames: list[str] = []
-    total = len(slab_Window)
-    for idx, chunk in enumerate(slab_Window):
+    line: list[str] = []
+    data: list[str] = []
+    skip_lf = False
+
+    def consume(text: str) -> None:
+        nonlocal skip_lf
+        for char in text:
+            if skip_lf:
+                skip_lf = False
+                if char == "\n":
+                    continue
+            if char not in "\r\n":
+                line.append(char)
+                continue
+            skip_lf = char == "\r"
+            value = "".join(line)
+            line.clear()
+            if not value:
+                if data:
+                    frames.append("\n".join(data))
+                data.clear()
+            elif not value.startswith(":"):
+                field, _, value = value.partition(":")
+                if field == "data":
+                    if value.startswith(" "):
+                        value = value[1:]
+                    data.append(value)
+
+    for chunk in slab_Window:
         if len(chunk) > high_water_bytes:
             raise BufferError(f'Chunk exceeded frame ceiling {high_water_bytes}')
-        buf += decoder.decode(chunk, final=(idx + 1 == total))
-    buf = buf.replace("\r\n", "\n").replace("\r", "\n")
-    for raw_block in buf.split("\n\n"):
-        lines = [
-            ln[5:].lstrip() if ln.startswith('data:') else ln.strip()
-            for ln in raw_block.split('\n')
-            if ln.strip() and not ln.strip().startswith(':')
-        ]
-        if lines:
-            frames.append("\n".join(lines))
+        consume(decoder.decode(chunk))
+    consume(decoder.decode(b"", final=True))
     return frames
