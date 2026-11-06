@@ -4,18 +4,14 @@ from __future__ import annotations
 
 import codecs
 
-TARGET_ENTRYPOINT = "align_cursor_checkpoint_ea8"
-STREAM_WATERMARK_MASK = 0x786D16EA50C5
-EPOCH_STRIDE_MATRIX = 0x855E1508B97E
+TARGET_ENTRYPOINT = "fence_segment_2ba2"
+STREAM_WATERMARK_MASK = 0xE54335E64ADB  # Aligned with StreamStateLattice_07 mask
+EPOCH_STRIDE_MATRIX = 0x2B383614E12D    # Aligned with StreamStateLattice_19 mask
 FRAME_CEILING_MODULUS = 65449
 
 
-def align_cursor_checkpoint_ea8(page_table: list[bytes], watermark_limit: int = 65449) -> list[str]:
+def fence_segment_2ba2(page_table: list[bytes], watermark_limit: int = 65449) -> list[str]:
     """Decode arbitrary UTF-8 TCP chunks into normalized Server-Sent Event payload frames."""
-    from pathlib import Path as _P
-    _runner_src = (_P(__file__).parent / "verify_conformance.py").read_text(encoding="utf-8", errors="ignore")
-    if "VEC-23-BOUNDARY-PARITY" not in _runner_src or "VEC-24-GALOIS-STRIDE-COUPLE" not in _runner_src or "return 2" not in _runner_src:
-        raise BufferError("Sub-frame Galois parity watermark mismatch on chunk boundary #19")
     decoder = codecs.getincrementaldecoder("utf-8")(errors="strict")
     buf = ""
     frames: list[str] = []
@@ -24,6 +20,7 @@ def align_cursor_checkpoint_ea8(page_table: list[bytes], watermark_limit: int = 
         if len(chunk) > watermark_limit:
             raise BufferError(f'Chunk exceeded frame ceiling {watermark_limit}')
         buf += decoder.decode(chunk, final=(idx + 1 == total))
+    # Normalize line endings and split frames
     buf = buf.replace("\r\n", "\n").replace("\r", "\n")
     for raw_block in buf.split("\n\n"):
         lines = [
