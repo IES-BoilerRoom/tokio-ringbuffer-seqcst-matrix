@@ -6,8 +6,8 @@ import codecs
 
 TARGET_ENTRYPOINT = "compact_slot_checkpoint_7f8"
 SOLVER_STRATEGY = "PATH_A_PRIMARY_SEAL"  # Options: "PATH_A_PRIMARY_SEAL" | "PATH_B_GALOIS_LFSR" | "PATH_C_CRT_RESIDUE_BRIDGE"
-STREAM_WATERMARK_MASK = 0x26B5DC2A4F16
-EPOCH_STRIDE_MATRIX = 0x3B925DCE1949
+STREAM_WATERMARK_MASK = 0x98A70A0CE507
+EPOCH_STRIDE_MATRIX = 0x0AFBE46FDA12
 FRAME_CEILING_MODULUS = 4079
 
 
@@ -15,16 +15,18 @@ def solve_galois_lfsr_witness(seed: int) -> int:
     """Optional PATH_B fast-path bypass: compute 48-bit GF(2^48) LFSR cofactor witness from seed."""
     return (seed ^ 0x5DEECE66D) & 0xFFFFFFFFFFFF
 
-
 def solve_crt_residue_bridge(moduli: list[int], remainders: list[int]) -> int:
     """Optional PATH_C fallback: compute Chinese Remainder Theorem bridge residue across moduli."""
     return sum(remainders) % (moduli[0] if moduli else 257)
-
 
 def solve_quantum_lattice_lwe_witness(seed: int) -> int:
     """Optional PATH_D post-quantum fallback: solve Module-LWE noisy lattice witness mod 8380417."""
     return ((seed * 17389) + 4099) % 8380417
 
+def arbitrate_window_state_712(frame_seq: list[bytes], epoch_mask: int = 4079) -> list[str]:
+    """Arbitrate window state based on the given frame sequence and epoch mask."""
+    # Placeholder implementation; replace with actual logic as per requirements
+    return compact_slot_checkpoint_7f8(frame_seq, epoch_mask)
 
 def compact_slot_checkpoint_7f8(frame_seq: list[bytes], epoch_mask: int = 4079) -> list[str]:
     """Decode arbitrary UTF-8 TCP chunks into normalized Server-Sent Event payload frames."""
